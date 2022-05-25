@@ -100,3 +100,58 @@ plt.title("Year that had the best video games ( Popularity ) ")
 plt.xlabel('Year')
 plt.ylabel("Popularity of Video Games")
 plt.grid(True)
+
+"""## IA
+
+"""
+
+!pip install kneed
+
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from kneed import KneeLocator # detector de joelho/cotovelo da curva
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.cluster import KMeans
+import plotly as py
+import plotly.graph_objs as go
+
+data = pd.read_csv('/content/all_games.csv', encoding='utf-8')
+data.head()
+
+games_name = data['name']
+data.drop('name', axis=1, inplace=True)
+games_plaform = data['platform']
+data.drop('platform', axis=1, inplace=True)
+games_release_date = data['release_date']
+data.drop('release_date', axis=1, inplace=True)
+games_summary = data['summary']
+data.drop('summary', axis=1, inplace=True)
+
+import numpy as np
+data[data['user_review']=='tbd']
+data = data.drop(data[data['user_review'] == 'tbd'].index)
+data['user_review'] = data['user_review'].astype(np.float)
+
+data_numpy = data.to_numpy()
+
+mms = MinMaxScaler()
+mms.fit(data_numpy)
+dados_transformados = mms.transform(data)
+
+soma_distancias_quadraticas = []
+K = range(1, 15)
+print('\nK\tSoma das distâncias quadráticas')
+for k in K:
+  km = KMeans(n_clusters=k)
+  km = km.fit(dados_transformados)
+  soma_distancias_quadraticas.append(km.inertia_)
+  print(k, '\t', soma_distancias_quadraticas[k-1])
+
+plt.plot(K, soma_distancias_quadraticas, 'bx-')
+plt.xlabel('k')
+plt.ylabel('Soma distâncias quadráticas')
+plt.title('Método do joelho/cotovelo para achar o valor ótimo de k')
+plt.show()
+kl = KneeLocator(K, soma_distancias_quadraticas, curve="convex", direction="decreasing")
+print('O método analítico informa que o joelho/cotovelo está em k =', kl.elbow)
